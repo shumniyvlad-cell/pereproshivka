@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Перепрошивка. Юлия Каряпкина</title>
+<meta name="description" content="Нахожу сценарий, который у тебя повторяется, и остаюсь рядом 21 день, пока он не перестанет запускаться.">
+<meta name="theme-color" content="#1F2BEB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231F2BEB'/%3E%3Crect x='6' y='13' width='20' height='6' rx='1.5' fill='none' stroke='white' stroke-width='2'/%3E%3Crect x='8' y='15' width='9' height='2' fill='%23E3241B'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300..900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cobalt:#1F2BEB; --cobalt-deep:#141C9E; --cobalt-ink:#0E1470;
+  --red:#E3241B; --red-text:#C81E15;
+  --bg:#FFFFFF; --panel:#F0F1F4; --ink:#0B0C12; --ink-2:#4A4D5A; --line:#DFE1E7;
+  --on-cobalt:#FFFFFF; --on-cobalt-2:#D4D8FF;
+  --r:14px;
+  --head-h:64px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0C0D12; --panel:#17181F; --ink:#F2F3F7; --ink-2:#A6A9B8; --line:#262833; --red-text:#FF6A5F; color-scheme:dark}
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--head-h) + 24px)}
+body{background:var(--bg);color:var(--ink);font-family:"Geologica",system-ui,-apple-system,sans-serif;font-weight:350;font-size:17px;line-height:1.5;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-weight:800;line-height:1.02;letter-spacing:-.03em;text-wrap:balance}
+p{text-wrap:pretty}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+img{display:block;max-width:100%}
+.nw{white-space:nowrap}
+.wrap{width:min(1240px,100% - 32px);margin-inline:auto}
+:focus-visible{outline:3px solid var(--red);outline-offset:3px;border-radius:6px}
+
+/* ---------- кнопки ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 24px;border-radius:999px;font-weight:600;font-size:17px;text-decoration:none;transition:transform .2s,background-color .2s,color .2s}
+.btn:active{transform:scale(.97)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:#C81E15}
+.btn-white{background:#fff;color:var(--cobalt-ink)}
+.btn-white:hover{background:#E8EAFF}
+.btn-line{border:2px solid currentColor}
+.btn-line:hover{background:rgba(255,255,255,.12)}
+.btn svg{width:18px;height:18px;flex:none}
+
+/* ---------- шапка с прогрессом прошивки ---------- */
+.head{position:fixed;inset:0 0 auto 0;z-index:50;height:var(--head-h);display:flex;align-items:center;transition:background-color .4s,color .4s,border-color .4s;
+  background:rgba(31,43,235,.82);color:#fff;border-bottom:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3)}
+body.clean .head{background:color-mix(in srgb,var(--bg) 84%,transparent);color:var(--ink);border-color:var(--line)}
+.head .wrap{display:flex;align-items:center;gap:24px}
+.logo{font-weight:700;font-size:17px;letter-spacing:-.01em;text-decoration:none;white-space:nowrap}
+.flash{flex:1;display:flex;align-items:center;gap:14px;min-width:0}
+.flash-bar{position:relative;flex:1;max-width:420px;height:20px;border:2px solid currentColor;border-radius:6px;padding:2px;display:grid;grid-template-columns:repeat(20,1fr);gap:2px}
+.flash-bar i{display:block;border-radius:1px;background:currentColor;opacity:.13;transition:opacity .12s}
+.flash-bar i.on{opacity:1}
+.flash-bar i.head-block{background:var(--red);opacity:1}
+body:not(.clean) .flash-bar i.head-block{background:#fff;box-shadow:0 0 0 2px var(--red) inset}
+.flash-label{font-size:14px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}
+.flash-label b{font-weight:700}
+.head .btn{min-height:42px;padding:0 18px;font-size:15px}
+body:not(.clean) .head .btn-red{background:#fff;color:var(--cobalt-ink)}
+
+/* ---------- первый экран: сбой ---------- */
+.hero{position:relative;background:var(--cobalt);color:var(--on-cobalt);padding-top:calc(var(--head-h) + 28px);overflow:hidden;isolation:isolate}
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;background:
+  radial-gradient(60% 50% at 78% 62%,rgba(255,255,255,.16),transparent 70%)}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"st st" "w w" "l p" "b p" "c p" "x p";grid-template-rows:auto auto auto auto auto 1fr;column-gap:40px;min-height:calc(100svh - var(--head-h) - 28px)}
+.hero-copy{display:contents}
+.status{grid-area:st;justify-self:start}
+.lead{grid-area:l}.byline{grid-area:b}.cta-row{grid-area:c}
+.status{display:inline-flex;align-items:center;gap:10px;padding:8px 14px 8px 10px;border-radius:999px;background:rgba(14,20,112,.55);font-size:15px;font-weight:500}
+.status .dot{width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px rgba(227,36,27,.3)}
+.word{grid-area:w;display:block;font-weight:900;font-size:min(11.2vw,160px);line-height:.86;letter-spacing:-.055em;margin:28px 0 0 -.04em;white-space:nowrap;position:relative}
+.word .ghost{position:absolute;left:0;top:0;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.35);pointer-events:none}
+.lead{font-size:clamp(20px,2.1vw,27px);line-height:1.3;font-weight:400;max-width:24em;margin-top:30px}
+.byline{margin-top:18px;color:var(--on-cobalt-2);font-size:16px;max-width:30em}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;margin:34px 0 56px}
+.hero-photo{grid-area:p;position:relative;z-index:2;align-self:end;height:min(68svh,660px);aspect-ratio:412/681;margin-top:-14px}
+.hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 30px 60px rgba(8,10,60,.45))}
+.err{position:absolute;z-index:2;display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(14,20,112,.72);color:#fff;font-size:14.5px;font-weight:500;line-height:1.25;white-space:nowrap;box-shadow:0 14px 30px rgba(8,10,60,.35)}
+.err svg{width:18px;height:18px;flex:none;color:#FF8077}
+.err .n{color:var(--on-cobalt-2);font-weight:400}
+.motion .err{animation:jitter 5.5s ease-in-out infinite}
+.motion .err:nth-child(2n){animation-duration:6.8s;animation-delay:-2s}
+.motion .err:nth-child(3n){animation-duration:4.9s;animation-delay:-1s}
+@keyframes jitter{0%,100%{transform:translate(0,0) rotate(var(--r,0deg))}50%{transform:translate(6px,-9px) rotate(calc(var(--r,0deg) * -1))}}
+
+/* ---------- хаос в структуру ---------- */
+.order{position:relative;height:300vh}
+.order.static{height:auto}
+.stage{position:sticky;top:0;height:100svh;overflow:hidden;--w:0}
+.layer{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:var(--head-h) 0 24px}
+.layer.dark{background:var(--cobalt);color:#fff}
+.layer.clean{background:var(--bg);color:var(--ink);clip-path:inset(0 calc((1 - var(--w)) * 100%) 0 0)}
+.sweep{position:absolute;top:0;bottom:0;left:calc(var(--w) * 100%);width:3px;margin-left:-1.5px;background:var(--red);box-shadow:0 0 24px 4px rgba(227,36,27,.55);opacity:0;pointer-events:none}
+.sweep.on{opacity:1}
+.sweep span{position:absolute;top:calc(var(--head-h) + 18px);left:10px;padding:7px 12px;border-radius:999px;background:var(--red);color:#fff;font-size:14px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sweep.flip span{left:auto;right:10px}
+.stage-heads{display:grid;margin-bottom:28px}
+.stage-heads h2{grid-area:1/1;font-size:clamp(28px,4vw,54px);max-width:17em}
+.stage-heads .ph{visibility:hidden}
+.stage-heads em{font-style:normal;color:var(--red-text)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;list-style:none}
+.tile{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px 14px;padding:16px 18px;border-radius:var(--r);background:var(--panel)}
+.dark .tile{background:#121A8C;color:#fff;will-change:transform;box-shadow:0 14px 30px rgba(8,10,60,.3)}
+.tile .ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;grid-row:span 2;background:var(--bg);color:var(--red-text)}
+.dark .tile .ico{background:rgba(255,255,255,.1);color:#FF8077}
+.tile .ico svg{width:18px;height:18px}
+.tile .say{font-weight:600;font-size:17px;line-height:1.25}
+.tile .bug{font-size:15px;color:var(--ink-2)}
+.tile .bug b{color:var(--ink);font-weight:600}
+.dark .tile .bug,.dark .tile .bug b{color:transparent}
+.dark .tile .bug{justify-self:start;border-radius:5px;background:rgba(255,255,255,.1)}
+.order.static .stage{position:relative;height:auto}
+.order.static .layer.dark,.order.static .sweep{display:none}
+.order.static .layer.clean{position:relative;clip-path:none;padding:calc(var(--head-h) + 40px) 0 40px}
+
+/* ---------- секции на чистом ---------- */
+section.s{padding:120px 0}
+.kicker{display:inline-block;font-size:16px;font-weight:600;color:var(--red-text);margin-bottom:18px}
+.s h2{font-size:clamp(34px,5vw,68px);max-width:15em}
+.s .sub{font-size:clamp(18px,1.6vw,21px);color:var(--ink-2);max-width:36em;margin-top:22px}
+
+/* баги */
+.bugs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:56px}
+.bugcard{position:relative;display:flex;flex-direction:column;min-height:380px;padding:26px 24px 24px;border-radius:22px;background:var(--panel);overflow:hidden;transform-style:preserve-3d;transition:transform .25s ease-out}
+.bugcard .film{font-size:31px;font-weight:800;letter-spacing:-.035em;line-height:1}
+.bugcard .tag{font-size:15px;color:var(--ink-2);margin-top:10px}
+.bugcard q{display:block;margin-top:auto;font-size:21px;font-weight:600;line-height:1.22;letter-spacing:-.015em;quotes:"«" "»"}
+.bugcard p{margin-top:12px;font-size:15.5px;color:var(--ink-2)}
+.bugcard .reel{position:absolute;right:-26px;top:70px;width:120px;height:120px;border-radius:50%;border:14px solid color-mix(in srgb,var(--ink) 7%,transparent)}
+.bugcard .reel::after{content:"";position:absolute;inset:26px;border-radius:50%;border:8px dashed color-mix(in srgb,var(--ink) 9%,transparent)}
+.motion .bugcard .reel::after{animation:spin 14s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bugcard .glare{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(240px circle at var(--gx,50%) var(--gy,50%),rgba(255,255,255,.55),transparent 60%)}
+@media (prefers-color-scheme:dark){.bugcard .glare{background:radial-gradient(240px circle at var(--gx,50%) var(--gy,50%),rgba(255,255,255,.08),transparent 60%)}}
+.bugcard:hover .glare{opacity:1}
+.bugs-cta{margin-top:28px;display:flex;flex-wrap:wrap;align-items:center;gap:18px}
+.bugs-cta span{color:var(--ink-2);font-size:16px}
+
+/* 21 день */
+.days{display:grid;grid-template-columns:1fr 400px;gap:72px;margin-top:64px;align-items:start}
+.steps{list-style:none}
+.step{padding:44px 0 44px 30px;border-left:2px solid var(--line);position:relative;min-height:44vh;display:flex;flex-direction:column;justify-content:center;transition:opacity .3s}
+.step::before{content:"";position:absolute;left:-7px;top:50%;width:12px;height:12px;border-radius:50%;background:var(--line);transition:background .3s,transform .3s}
+.step.on::before{background:var(--red);transform:scale(1.3)}
+.step:not(.on){opacity:.42}
+.step .d{font-size:16px;font-weight:600;color:var(--red-text)}
+.step h3{font-size:clamp(26px,2.8vw,38px);margin-top:8px}
+.step p{margin-top:12px;color:var(--ink-2);max-width:30em}
+.step .len{display:inline-block;margin-top:14px;padding:5px 12px;border-radius:999px;background:var(--panel);font-size:14px;font-weight:500}
+.phone-col{position:sticky;top:calc(var(--head-h) + 32px)}
+.phone{width:min(330px,100%);aspect-ratio:9/19.3;margin-inline:auto;border-radius:52px;padding:11px;background:#0B0C12;box-shadow:0 0 0 2px #2A2C36,0 40px 80px rgba(11,12,18,.28)}
+.screen{position:relative;height:100%;border-radius:42px;overflow:hidden;background:var(--cobalt);color:#fff;padding:48px 18px 18px;display:flex;flex-direction:column}
+.screen .island{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:96px;height:28px;border-radius:20px;background:#000}
+.screen .clock{text-align:center;font-weight:600;font-size:64px;letter-spacing:-.04em;line-height:1}
+.screen .date{text-align:center;font-size:14px;color:var(--on-cobalt-2);margin-top:4px}
+.screen .ver{margin:16px auto 0;font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.14)}
+.blocks{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.blk{border-radius:16px;background:rgba(14,20,112,.62);padding:11px 13px;opacity:0;transform:translateY(10px);transition:opacity .45s,transform .45s}
+.blk.show{opacity:1;transform:none}
+.blk h4{font-size:12px;font-weight:600;color:var(--on-cobalt-2);margin-bottom:5px}
+.blk li{list-style:none;font-size:13px;line-height:1.3;padding-left:14px;position:relative}
+.blk li+li{margin-top:4px}
+.blk li::before{content:"";position:absolute;left:0;top:.45em;width:6px;height:6px;border-radius:2px;background:#FF8077}
+.blk .money{font-size:26px;font-weight:800;letter-spacing:-.03em}
+.screen .daypill{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:600;padding:11px 14px;border-radius:16px;background:rgba(255,255,255,.95);color:var(--cobalt-ink)}
+.daypill .bar{flex:1;height:6px;border-radius:3px;background:#D9DCF5;overflow:hidden}
+.daypill .bar i{display:block;height:100%;width:0;background:var(--red);transition:width .5s}
+.screen .alert{position:absolute;left:12px;right:12px;top:150px;padding:13px 14px;border-radius:18px;background:#fff;color:var(--ink);font-size:13px;line-height:1.3;box-shadow:0 18px 40px rgba(0,0,0,.3);opacity:0;transform:translateY(-14px) scale(.96);transition:opacity .35s,transform .35s;color:#0B0C12}
+.screen .alert b{display:block;font-size:14px;margin-bottom:2px;color:var(--red-text)}
+@media (prefers-color-scheme:dark){.screen .alert b{color:#C81E15}}
+.phone[data-day="3"] .alert{opacity:1;transform:none}
+.motion .phone[data-day="3"] .screen{animation:glitch .6s steps(2) 2}
+@keyframes glitch{0%{transform:translate(0)}25%{transform:translate(-4px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-1px)}100%{transform:translate(0)}}
+.phone-cap{text-align:center;color:var(--ink-2);font-size:14.5px;margin-top:16px}
+
+/* обо мне */
+.about{display:grid;grid-template-columns:420px 1fr;gap:72px;align-items:end}
+.about-photo{position:relative;border-radius:28px;background:var(--cobalt);overflow:hidden;aspect-ratio:4/5.4;display:flex;align-items:flex-end;justify-content:center}
+.about-photo img{height:92%;width:auto;object-fit:contain;object-position:bottom}
+.about-photo .stamp{position:absolute;left:18px;top:18px;padding:8px 13px;border-radius:999px;background:#fff;color:var(--cobalt-ink);font-size:14px;font-weight:600}
+.about h2{font-size:clamp(32px,4.2vw,58px)}
+.about p{margin-top:20px;font-size:19px;color:var(--ink-2);max-width:32em}
+.about p strong{color:var(--ink);font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:36px}
+.fact{padding:20px;border-radius:18px;background:var(--panel)}
+.fact b{display:block;font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.fact span{display:block;font-size:14.5px;color:var(--ink-2);margin-top:8px;line-height:1.35}
+.case{margin-top:14px;padding:22px 24px;border-radius:18px;border:2px solid var(--ink);display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.case .big{font-size:44px;font-weight:900;letter-spacing:-.05em;line-height:1}
+.case p{margin:0;font-size:16.5px;color:var(--ink)}
+
+/* цены */
+.prices{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:14px;margin-top:56px;align-items:stretch}
+.price{display:flex;flex-direction:column;padding:30px 26px 26px;border-radius:24px;background:var(--panel)}
+.price h3{font-size:28px}
+.price .when{font-size:15px;color:var(--ink-2);margin-top:8px}
+.price ul{list-style:none;margin:22px 0 26px}
+.price li{padding:10px 0;border-top:1px solid var(--line);font-size:16px}
+.price .cost{margin-top:auto;font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.price .cost s{font-size:22px;font-weight:500;color:var(--ink-2);margin-left:8px;letter-spacing:-.01em}
+.price .note{font-size:14.5px;color:var(--ink-2);margin-top:10px}
+.price .btn{margin-top:22px}
+.price.main{background:var(--cobalt);color:#fff}
+.price.main .when,.price.main .note,.price.main .cost s{color:var(--on-cobalt-2)}
+.price.main li{border-color:rgba(255,255,255,.2)}
+.seats{display:flex;gap:6px;margin-top:16px}
+.seats i{width:26px;height:10px;border-radius:3px;background:#fff}
+.seats + .note{margin-top:8px}
+.price.main .btn-red{background:#fff;color:var(--cobalt-ink)}
+.price.main .btn-red:hover{background:#E8EAFF}
+.price:not(.main) .btn{background:var(--ink);color:var(--bg)}
+
+/* правила */
+.rules{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:48px;counter-reset:r}
+.rule{padding:24px;border-radius:20px;border:2px solid var(--line)}
+.rule b{display:block;font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.rule span{display:block;margin-top:10px;font-size:15.5px;color:var(--ink-2)}
+
+/* вопросы */
+.faq{margin-top:40px;max-width:860px;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:20px;padding:24px 0;font-size:21px;font-weight:600;letter-spacing:-.01em}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .pm{width:30px;height:30px;flex:none;border-radius:50%;background:var(--panel);position:relative;transition:transform .25s}
+.faq summary .pm::before,.faq summary .pm::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:2px;background:currentColor;transform:translate(-50%,-50%)}
+.faq summary .pm::after{transform:translate(-50%,-50%) rotate(90deg)}
+.faq details[open] .pm{transform:rotate(45deg)}
+.faq details p{padding:0 0 24px;color:var(--ink-2);max-width:42em}
+
+/* финал */
+.final{background:var(--panel);text-align:center;padding:120px 0 60px}
+.final .pct{font-size:clamp(84px,17vw,240px);font-weight:900;letter-spacing:-.06em;line-height:.85}
+.final .pct span{color:var(--red-text)}
+.final h2{margin:22px auto 0;font-size:clamp(28px,3.6vw,48px);max-width:16em}
+.final .cta-row{justify-content:center;margin:34px 0 0}
+.final .btn-line{color:var(--ink)}
+.final .btn-line:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.foot{margin-top:100px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:14px;color:var(--ink-2);text-align:left}
+.foot a{text-decoration:none;font-weight:500;color:var(--ink)}
+
+/* ---------- тест: лист снизу ---------- */
+.sheet-back{position:fixed;inset:0;z-index:80;background:rgba(6,8,30,.55);opacity:0;pointer-events:none;transition:opacity .3s}
+.sheet{position:fixed;z-index:90;left:50%;bottom:0;width:min(560px,100%);max-height:92svh;overflow:auto;transform:translate(-50%,105%);transition:transform .42s cubic-bezier(.2,.9,.25,1);
+  background:var(--bg);color:var(--ink);border-radius:28px 28px 0 0;padding:12px 22px calc(24px + env(safe-area-inset-bottom));overscroll-behavior:contain}
+body.sheet-open .sheet-back{opacity:1;pointer-events:auto}
+body.sheet-open .sheet{transform:translate(-50%,0)}
+@media (min-width:760px){.sheet{bottom:50%;border-radius:28px;transform:translate(-50%,60%) scale(.96);opacity:0;transition:transform .35s cubic-bezier(.2,.9,.25,1),opacity .25s}
+  body.sheet-open .sheet{transform:translate(-50%,50%);opacity:1}}
+.grab{width:42px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+.sheet-top{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px}
+.sheet-top .cnt{font-size:15px;font-weight:500;color:var(--ink-2)}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--panel)}
+.icon-btn svg{width:20px;height:20px}
+.icon-btn[hidden]{display:none}
+.qbar{height:6px;border-radius:3px;background:var(--panel);margin:12px 0 22px;overflow:hidden}
+.qbar i{display:block;height:100%;background:var(--red);width:0;transition:width .35s}
+.sheet h3{font-size:27px;letter-spacing:-.025em}
+.opts{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.opt{text-align:left;padding:17px 18px;border-radius:16px;background:var(--panel);font-size:16.5px;line-height:1.3;border:2px solid transparent;transition:border-color .15s,background-color .15s}
+.opt:hover{border-color:var(--ink)}
+.opt[aria-pressed="true"]{border-color:var(--red)}
+.res-film{font-size:clamp(40px,10vw,56px);font-weight:900;letter-spacing:-.045em;line-height:.95;margin-top:6px}
+.res p{margin-top:14px;color:var(--ink-2);font-size:16.5px}
+.res .btn{width:100%;margin-top:22px}
+.res .again{display:block;margin:12px auto 0;padding:12px;font-weight:500;color:var(--ink-2)}
+
+/* ---------- адаптив ---------- */
+@media (max-width:1080px){
+  .bugs{grid-template-columns:repeat(2,1fr)}
+  .rules{grid-template-columns:repeat(2,1fr)}
+  .about{grid-template-columns:340px 1fr;gap:44px}
+  .days{grid-template-columns:1fr 340px;gap:40px}
+}
+@media (max-width:860px){
+  :root{--head-h:96px}
+  .head .wrap{flex-wrap:wrap;gap:8px 12px;padding-block:10px}
+  .head{height:auto}
+  .flash{order:3;flex-basis:100%}
+  .flash-bar{max-width:none;height:16px}
+  .logo{flex:1}
+  .hero-grid{grid-template-columns:1fr;grid-template-areas:"st" "w" "l" "b" "c" "p";grid-template-rows:none;min-height:0}
+  .hero-photo{height:60svh;justify-self:end;margin:-10px -12px 0 0}
+  .err{font-size:13.5px;padding:9px 12px}
+  .err:nth-of-type(1){left:-30%!important;top:20%!important}
+  .err:nth-of-type(3){left:-34%!important;top:50%!important}
+  .err:nth-of-type(5){left:-26%!important;top:78%!important}
+  .cta-row{margin-bottom:0}
+  .cta-row .btn{flex:1 1 100%}
+  .err.far{display:none}
+  .tiles{grid-template-columns:1fr;gap:8px}
+  .tile{padding:12px 14px}
+  .tile .say{font-size:15.5px}
+  .tile .bug{font-size:14px}
+  .tile .ico{width:30px;height:30px}
+  .stage-heads{min-height:5.2em;margin-bottom:18px}
+  .stage-heads h2{font-size:clamp(24px,6.6vw,34px)}
+  section.s{padding:84px 0}
+  .bugs{grid-template-columns:1fr;margin-top:40px}
+  .bugcard{min-height:300px}
+  .days{grid-template-columns:1fr;gap:0}
+  .phone-col{position:sticky;top:calc(var(--head-h) + 10px);z-index:2;order:-1;height:0;overflow:visible;pointer-events:none;opacity:0;transition:opacity .3s}
+  .phone-col.vis{opacity:1}
+  .phone-col .phone{width:118px;margin:0 0 0 auto;border-radius:24px;padding:5px;transform-origin:top right}
+  .phone-col .screen{border-radius:20px;padding:20px 8px 8px}
+  .phone-col .screen .island{width:36px;height:11px;top:6px}
+  .phone-col .screen .clock{font-size:26px}
+  .phone-col .screen .date,.phone-col .screen .ver,.phone-col .phone-cap{display:none}
+  .phone-col .blocks{gap:4px;margin-top:6px}
+  .phone-col .blk{padding:5px 6px;border-radius:7px}
+  .phone-col .blk h4{font-size:6px;margin-bottom:2px}
+  .phone-col .blk li{font-size:5.5px;padding-left:6px}
+  .phone-col .blk li::before{width:3px;height:3px}
+  .phone-col .blk .money{font-size:11px}
+  .phone-col .daypill{font-size:6px;padding:5px 6px;border-radius:7px;gap:4px}
+  .phone-col .daypill .bar{height:3px}
+  .phone-col .alert{top:58px;left:5px;right:5px;padding:5px 6px;font-size:5.5px;border-radius:8px}
+  .phone-col .alert b{font-size:6.5px}
+  .step{min-height:0;padding:34px 140px 34px 22px}
+  .about{grid-template-columns:1fr;gap:32px}
+  .about-photo{max-width:420px;aspect-ratio:4/4.6}
+  .facts{grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .fact{padding:14px}
+  .fact b{font-size:30px}
+  .fact span{font-size:13px}
+  .case{grid-template-columns:1fr;gap:8px}
+  .prices{grid-template-columns:1fr}
+  .price.main{order:-1}
+  .rules{grid-template-columns:1fr}
+  .faq summary{font-size:18px}
+  .final{padding:90px 0 40px}
+  .final .cta-row .btn{flex:1 1 100%}
+}
+@media (max-width:430px){
+  .step{padding-right:128px}
+  .facts{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="head" id="head">
+  <div class="wrap">
+    <a class="logo" href="#top">Юлия Каряпкина</a>
+    <div class="flash" aria-hidden="true">
+      <div class="flash-bar" id="flashBar"></div>
+      <div class="flash-label" id="flashLabel"><b>0%</b> сценарий запущен снова</div>
+    </div>
+    <button class="btn btn-red" data-quiz>Найти свой баг</button>
+  </div>
+</header>
+
+<main id="top">
+<!-- ===== Сбой ===== -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="status"><span class="dot"></span>Сценарий завершился с ошибкой. Попытка №7</span>
+      <h1 class="word" aria-label="Перепрошивка">Перепрошивка<span class="ghost" aria-hidden="true">Перепрошивка</span></h1>
+      <p class="lead">Нахожу сценарий, который у тебя повторяется, и остаюсь рядом 21 день, пока он не перестанет запускаться.</p>
+      <p class="byline">Юлия Каряпкина. 14 лет вытаскивала компании из банкротства, теперь разбираю так же жизнь.</p>
+      <div class="cta-row">
+        <button class="btn btn-white" data-quiz>Найти свой баг за 2 минуты</button>
+        <a class="btn btn-line" href="#price">Записаться на диагностику</a>
+      </div>
+    </div>
+    <div class="hero-photo">
+      <img src="img/yulia1.webp" width="412" height="681" alt="Юлия Каряпкина в красном пиджаке с книгой Forbes">
+      <div class="err" style="left:-46%;top:14%;--r:-3deg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>Опять начну с понедельника</div>
+      <div class="err far" style="left:-74%;top:32%;--r:2deg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>Доход снова упёрся в&nbsp;150&nbsp;000</div>
+      <div class="err" style="left:52%;top:40%;--r:-2deg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>Всё на мне <span class="n">×12</span></div>
+      <div class="err far" style="left:-58%;top:52%;--r:3deg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>Снова тот же тип мужчины</div>
+      <div class="err" style="left:-30%;top:76%;--r:-1.5deg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>Закрыла кредит, открыла новый</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Хаос складывается в структуру ===== -->
+<section class="order" id="order">
+  <div class="stage" id="stage">
+    <div class="layer dark" aria-hidden="true">
+      <div class="wrap">
+        <div class="stage-heads"><h2>Марафоны, психолог, новый год с&nbsp;понедельника. А&nbsp;сценарий всё равно запускается снова.</h2><h2 class="ph">Я&nbsp;14&nbsp;лет раскладывала хаос компаний в&nbsp;структуру. <em>С&nbsp;жизнью то&nbsp;же самое.</em></h2></div>
+        <ul class="tiles" id="tiles">
+        <li class="tile" data-c="0.06,0.10,-7"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Опять начну с понедельника»</span><span class="bug">Баг <b>«День сурка»</b>: начинаешь и бросаешь</span></li>
+        <li class="tile" data-c="0.58,0.04,5"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Доход снова упёрся в&nbsp;150&nbsp;тысяч»</span><span class="bug">Баг <b>«Шоу Трумана»</b>: потолок, который кажется стеной</span></li>
+        <li class="tile" data-c="0.34,0.46,9"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Всё на мне, а мне ничего»</span><span class="bug">Баг <b>«Золушка»</b>: тащишь всех, кроме себя</span></li>
+        <li class="tile" data-c="0.02,0.70,4"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Снова тот же тип мужчины»</span><span class="bug">Баг <b>«Ирония судьбы»</b>: одна история с разными людьми</span></li>
+        <li class="tile" data-c="0.62,0.62,-8"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Закрыла кредит, открыла новый»</span><span class="bug">Баг <b>«Шоу Трумана»</b>: деньги возвращаются на прежний уровень</span></li>
+        <li class="tile" data-c="0.40,0.86,-4"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Взялась за новое и бросила на третий день»</span><span class="bug">Баг <b>«День сурка»</b>: откат на третий день</span></li>
+      </ul>
+      </div>
+    </div>
+    <div class="layer clean">
+      <div class="wrap">
+        <div class="stage-heads"><h2 class="ph" aria-hidden="true">Марафоны, психолог, новый год с&nbsp;понедельника. А&nbsp;сценарий всё равно запускается снова.</h2><h2>Я&nbsp;14&nbsp;лет раскладывала хаос компаний в&nbsp;структуру. <em>С&nbsp;жизнью то&nbsp;же самое.</em></h2></div>
+        <ul class="tiles">
+        <li class="tile"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Опять начну с понедельника»</span><span class="bug">Баг <b>«День сурка»</b>: начинаешь и бросаешь</span></li>
+        <li class="tile"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Доход снова упёрся в&nbsp;150&nbsp;тысяч»</span><span class="bug">Баг <b>«Шоу Трумана»</b>: потолок, который кажется стеной</span></li>
+        <li class="tile"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Всё на мне, а мне ничего»</span><span class="bug">Баг <b>«Золушка»</b>: тащишь всех, кроме себя</span></li>
+        <li class="tile"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Снова тот же тип мужчины»</span><span class="bug">Баг <b>«Ирония судьбы»</b>: одна история с разными людьми</span></li>
+        <li class="tile"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Закрыла кредит, открыла новый»</span><span class="bug">Баг <b>«Шоу Трумана»</b>: деньги возвращаются на прежний уровень</span></li>
+        <li class="tile"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="say">«Взялась за новое и бросила на третий день»</span><span class="bug">Баг <b>«День сурка»</b>: откат на третий день</span></li>
+      </ul>
+      </div>
+    </div>
+    <div class="sweep" id="sweep" aria-hidden="true"><span>Прошивка 0%</span></div>
+  </div>
+</section>
+
+<!-- ===== Четыре бага ===== -->
+<section class="s" id="bugs">
+  <div class="wrap">
+    <span class="kicker">Что чиним</span>
+    <h2>Проблема не в деньгах и не в мужчинах. Проблема в сценарии, который повторяется.</h2>
+    <p class="sub">Банкротство не случается за один день. Сначала одна и та же мелкая ошибка повторяется месяцами. В жизни так же. Чаще всего я встречаю четыре сценария.</p>
+    <div class="bugs">
+      <article class="bugcard"><span class="reel"></span><span class="glare"></span>
+        <div class="film">День сурка</div><div class="tag">Начинаешь и бросаешь</div>
+        <q>Со следующего понедельника точно</q>
+        <p>Каждый раз новый план, новый курс, новая тетрадь. Через три дня всё как было.</p></article>
+      <article class="bugcard"><span class="reel"></span><span class="glare"></span>
+        <div class="film">Шоу Трумана</div><div class="tag">Потолок</div>
+        <q>Больше 150 тысяч у меня не бывает</q>
+        <p>Доход доходит до одной и той же цифры и откатывается, как будто стена нарисована.</p></article>
+      <article class="bugcard"><span class="reel"></span><span class="glare"></span>
+        <div class="film">Золушка</div><div class="tag">Тащишь всех</div>
+        <q>Без меня они не справятся</q>
+        <p>Работа, семья, подруги и их проблемы на тебе. На свою жизнь остаётся вечер воскресенья.</p></article>
+      <article class="bugcard"><span class="reel"></span><span class="glare"></span>
+        <div class="film">Ирония судьбы</div><div class="tag">Одна история в отношениях</div>
+        <q>Почему мне опять попался такой же</q>
+        <p>Люди разные, а сюжет одинаковый: те же ссоры, те же обещания, тот же финал.</p></article>
+    </div>
+    <div class="bugs-cta"><button class="btn btn-red" data-quiz>Найти свой баг</button><span>4 вопроса, около 2 минут</span></div>
+  </div>
+</section>
+
+<!-- ===== 21 день ===== -->
+<section class="s" id="days" style="padding-top:40px">
+  <div class="wrap">
+    <span class="kicker">Как проходит Перепрошивка</span>
+    <h2>Не одна сессия, после которой всё откатывается. 21 день рядом.</h2>
+    <p class="sub">Одна консультация даёт озарение на вечер. Сценарий возвращается на третий день, и в этот день я рядом.</p>
+    <div class="days">
+      <ol class="steps" id="steps">
+        <li class="step" data-day="0"><span class="d">День 0</span><h3>Диагностика</h3><p>Ищем один сценарий, который стоит тебе дороже всего. Не десять, один. Остальные часто отваливаются следом.</p><span class="len">60 минут в Zoom</span></li>
+        <li class="step" data-day="1"><span class="d">День 1</span><h3>Прошивка на экран</h3><p>Собираю тебе экран блокировки: красные флажки, правила «если, то» и цифру месяца. Ты видишь его каждый раз, когда берёшь телефон, то есть перед каждым решением.</p><span class="len">Готовый экран в Telegram</span></li>
+        <li class="step" data-day="3"><span class="d">День 3</span><h3>Проверка отката</h3><p>На третий день старый сценарий пробует вернуться. Раньше в этот момент всё и ломалось. Теперь мы встречаем его вместе.</p><span class="len">30 минут в Zoom</span></li>
+        <li class="step" data-day="12"><span class="d">Дни 4–20</span><h3>Отчёты в чат</h3><p>Каждый вечер коротко: что сработало, где тянуло назад. Отвечаю в тот же день и правлю прошивку, если правило не держит.</p><span class="len">Чат в Telegram</span></li>
+        <li class="step" data-day="21"><span class="d">День 21</span><h3>Финал</h3><p>Сверяем цифру месяца, смотрим, что изменилось в деньгах и в отношениях, и обновляем прошивку до версии 2.0.</p><span class="len">45 минут в Zoom</span></li>
+      </ol>
+      <div class="phone-col" aria-hidden="true">
+        <div class="phone" id="phone" data-day="0">
+          <div class="screen">
+            <span class="island"></span>
+            <div class="clock">07:30</div>
+            <div class="date">понедельник, 1 декабря</div>
+            <div class="ver" id="ver">Прошивка Ани, версия 1.0</div>
+            <div class="blocks">
+              <div class="blk" data-from="1"><h4>Красные флажки</h4><ul><li>Даю скидку в первом же сообщении</li><li>Беру задачу, которую никто не просил</li><li>Пишу ему первой после ссоры</li></ul></div>
+              <div class="blk" data-from="1"><h4>Если, то</h4><ul><li>Просят скидку: называю цену ещё раз и молчу</li><li>Хочу всё бросить: делаю 10 минут и ставлю галочку</li></ul></div>
+              <div class="blk" data-from="1"><h4>Цифра месяца</h4><div class="money">150 000 ₽</div></div>
+            </div>
+            <div class="alert"><b>Откат обнаружен</b>Хочется написать ему первой. Открой правило №3 и напиши Юле.</div>
+            <div class="daypill"><span id="dayTxt">День 0 из 21</span><span class="bar"><i id="dayBar"></i></span></div>
+          </div>
+        </div>
+        <p class="phone-cap">Пример экрана для вымышленной клиентки</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Обо мне ===== -->
+<section class="s" id="about" style="background:var(--panel)">
+  <div class="wrap about">
+    <div class="about-photo"><span class="stamp">Кризис-менеджер личности</span><img src="img/yulia8.webp" width="386" height="634" alt="Юлия Каряпкина" loading="lazy"></div>
+    <div>
+      <span class="kicker">Кто я</span>
+      <h2>14 лет я вытаскивала компании из банкротства. Теперь нахожу, почему у тебя всё повторяется.</h2>
+      <p>Ни одна компания не разоряется за один день. Сначала одна и та же дыра повторяется месяцами, и все делают вид, что её нет. <strong>Я привыкла находить эту дыру за первый час.</strong></p>
+      <p>По образованию политолог, училась расстановкам, цифровой и кризисной психологии. На сессии ты не услышишь терминов. Ты увидишь свой сценарий и план, что с ним делать завтра утром.</p>
+      <div class="facts">
+        <div class="fact"><b>14 лет</b><span>в банкротстве и антикризисном управлении</span></div>
+        <div class="fact"><b>1 час</b><span>чтобы найти сценарий на диагностике</span></div>
+        <div class="fact"><b>21 день</b><span>рядом, пока он не перестанет запускаться</span></div>
+      </div>
+      <div class="case"><span class="big">2 часа</span><p>Клиентка пришла на нулях и в кредитах. Через два часа после разбора подписала контракт на 3 месяца по 100&nbsp;000&nbsp;₽ в месяц.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Цены ===== -->
+<section class="s" id="price">
+  <div class="wrap">
+    <span class="kicker">Сколько стоит</span>
+    <h2>Начни с диагностики. Если пойдёшь дальше, она засчитается.</h2>
+    <div class="prices">
+      <article class="price">
+        <h3>Диагностика</h3><div class="when">3 места в неделю</div>
+        <ul><li>60 минут в Zoom</li><li>Называем твой главный сценарий</li><li>Уходишь с первым правилом</li></ul>
+        <div class="cost">15 000 ₽</div>
+        <div class="note">Засчитываю в Перепрошивку, если решишь в течение 72 часов</div>
+        <a class="btn" href="https://t.me/Shpandarium" target="_blank" rel="noopener">Записаться</a>
+      </article>
+      <article class="price main">
+        <h3>Перепрошивка</h3><div class="when">21 день, старт с 1 декабря</div>
+        <ul><li>Диагностика и экран-прошивка на телефон</li><li>Проверка отката на третий день</li><li>Чат с отчётами каждый вечер</li><li>Финал и прошивка версии 2.0</li></ul>
+        <div class="cost">35 000 ₽<s>55 000 ₽</s></div>
+        <div class="seats" aria-label="Свободно 5 мест из 5"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="note">Первые 5 мест за кейс и честный отзыв. С 12 января 55 000 ₽</div>
+        <a class="btn btn-red" href="https://t.me/Shpandarium" target="_blank" rel="noopener">Занять место</a>
+      </article>
+      <article class="price">
+        <h3>Пересборка</h3><div class="when">С 12 января, 2 места в месяц</div>
+        <ul><li>Два дня лично в Саратове или Москве</li><li>Два месяца сопровождения</li><li>Для собственников, у которых сценарий бьёт по бизнесу</li></ul>
+        <div class="cost">150 000 ₽</div>
+        <div class="note">Для тех, кто прошёл Перепрошивку или диагностику</div>
+        <a class="btn" href="https://t.me/Shpandarium" target="_blank" rel="noopener">Спросить про место</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Моя прошивка ===== -->
+<section class="s" id="rules" style="padding-top:20px">
+  <div class="wrap">
+    <span class="kicker">Моя прошивка</span>
+    <h2>У меня тоже есть правила. С ними работа быстрее.</h2>
+    <div class="rules">
+      <div class="rule"><b>60 минут, не три часа</b><span>Длинная сессия не делает результат больше. Делает больше усталость.</span></div>
+      <div class="rule"><b>Один сценарий за раз</b><span>Чиним самое дорогое. Не пытаемся решить всё сразу.</span></div>
+      <div class="rule"><b>Оплата до записи</b><span>Так ты приходишь подготовленной, а я держу время только для тебя.</span></div>
+      <div class="rule"><b>Не беру запросы про здоровье</b><span>С болезнями к врачу. Я работаю с решениями и сценариями.</span></div>
+    </div>
+    <div class="faq">
+      <details><summary>Чем это отличается от психолога?<span class="pm"></span></summary><p>Психолог помогает понять, откуда сценарий. Я смотрю на него как на систему, которая сливает ресурс, и строю план, как её остановить. Нам важно, что ты сделаешь в четверг вечером, когда захочется всё бросить.</p></details>
+      <details><summary>У меня всё сразу: деньги, отношения, работа. С чего начинать?<span class="pm"></span></summary><p>С диагностики. Почти всегда у всех трёх проблем один и тот же сценарий. Находим его, и остальное начинает двигаться следом.</p></details>
+      <details><summary>Что, если я опять откачусь?<span class="pm"></span></summary><p>Откат почти наверняка будет, обычно на третий день. Поэтому в программе есть отдельный созвон на этот день и чат на все 21 день. Откатиться одной и откатиться при мне — разные вещи.</p></details>
+      <details><summary>Это онлайн?<span class="pm"></span></summary><p>Да, созвоны в Zoom и чат в Telegram. Лично можно в Саратове и в Москве, об этом напиши мне отдельно.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Финал ===== -->
+<section class="final">
+  <div class="wrap">
+    <div class="pct">100<span>%</span></div>
+    <h2>Прошивка загружена. Осталось нажать одну кнопку.</h2>
+    <div class="cta-row">
+      <a class="btn btn-red" href="https://t.me/Shpandarium" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.4 4.3 2.9 11.4c-1.3.5-1.2 1.2-.2 1.5l4.7 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.4l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.3-.5-1.8-1.4-1.5ZM9.6 14.2l8.3-7.6c.4-.3-.1-.5-.6-.2L7.9 13l.1.1 1.6 1.1Z"/></svg>Записаться на диагностику</a>
+      <button class="btn btn-line" data-quiz>Сначала найти свой баг</button>
+    </div>
+    <div class="foot">
+      <span>Юлия Каряпкина, кризис-менеджер личности. <a href="https://t.me/Shpandarium" target="_blank" rel="noopener">@Shpandarium</a></span>
+      <span>Сайт: Vlad March Media</span>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ===== Тест ===== -->
+<div class="sheet-back" id="sheetBack"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="qTitle" aria-hidden="true" inert>
+  <div class="grab"></div>
+  <div class="sheet-top">
+    <button class="icon-btn" id="qPrev" aria-label="Предыдущий вопрос" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg></button>
+    <span class="cnt" id="qCnt">Вопрос 1 из 4</span>
+    <button class="icon-btn" id="qClose" aria-label="Закрыть тест"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="qbar"><i id="qBar"></i></div>
+  <div id="qBody"></div>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+  /* движение: уважаем системную настройку, но ?motion=1 включает принудительно */
+  let forced = false;
+  try {
+    const m = new URLSearchParams(location.search).get('motion');
+    if (m === '1') localStorage.setItem('pp-motion', '1');
+    if (m === '0') localStorage.removeItem('pp-motion');
+    forced = localStorage.getItem('pp-motion') === '1';
+  } catch (e) {}
+  const motion = forced || !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.documentElement.classList.toggle('motion', motion);
+
+  /* ---------- шапка: прогресс прошивки ---------- */
+  const bar = $('#flashBar'), label = $('#flashLabel');
+  bar.innerHTML = '<i></i>'.repeat(20);
+  const blocks = $$('i', bar);
+  const stages = [[0, 'сценарий запущен снова'], [15, 'диагностика'], [35, 'прошивка'], [62, 'проверка отката'], [80, 'установка'], [100, 'готово']];
+  let lastPct = -1;
+  function setFlash(p) {
+    const pct = Math.min(100, Math.round(p * 20) * 5); // рывками по 5%
+    if (pct === lastPct) return;
+    lastPct = pct;
+    const n = pct / 5;
+    blocks.forEach((b, i) => { b.className = i < n - 1 ? 'on' : i === n - 1 ? 'on head-block' : ''; });
+    let st = stages[0][1];
+    for (const [v, t] of stages) if (pct >= v) st = t;
+    label.innerHTML = '<b>' + pct + '%</b> ' + st;
+  }
+
+  /* ---------- хаос в структуру ---------- */
+  const order = $('#order'), stage = $('#stage'), tiles = $$('#tiles .tile'), sweep = $('#sweep'), sweepTxt = $('#sweep span');
+  let offs = [], lastQ = -1, wipe = 0;
+  if (!motion) { order.classList.add('static'); wipe = 1; }
+  function measure() {
+    if (!motion) return;
+    tiles.forEach(t => t.style.transform = 'none');
+    const sr = stage.getBoundingClientRect();
+    const W = sr.width, H = sr.height;
+    const hb = $('.dark .stage-heads').getBoundingClientRect().bottom - sr.top;
+    offs = tiles.map(t => {
+      const [cx, cy, rot] = t.dataset.c.split(',').map(Number);
+      const r = t.getBoundingClientRect();
+      const tx = Math.max(8, Math.min(cx * W, W - r.width * .92));
+      const top = hb + 16, bottom = H - r.height - 30;
+      const ty = top + cy * Math.max(40, bottom - top);
+      return { dx: tx - (r.left - sr.left), dy: ty - (r.top - sr.top), rot };
+    });
+    lastQ = -1;
+  }
+  const clamp = v => Math.min(1, Math.max(0, v));
+  const ease = q => q < .5 ? 4 * q * q * q : 1 - Math.pow(-2 * q + 2, 3) / 2;
+  function setOrder() {
+    if (!motion) return;
+    const r = order.getBoundingClientRect();
+    const q = clamp(-r.top / (order.offsetHeight - innerHeight));
+    if (Math.abs(q - lastQ) < .0005) return;
+    lastQ = q;
+    const m = ease(clamp((q - .06) / .46));  // хаос собирается
+    wipe = clamp((q - .58) / .34);           // прошивка заливает экран
+    const k = 1 - m;
+    tiles.forEach((t, i) => {
+      const o = offs[i]; if (!o) return;
+      t.style.transform = k < .001 ? 'none' : `translate3d(${(o.dx * k).toFixed(1)}px,${(o.dy * k).toFixed(1)}px,0) rotate(${(o.rot * k).toFixed(2)}deg)`;
+    });
+    stage.style.setProperty('--w', wipe.toFixed(4));
+    sweep.classList.toggle('on', wipe > 0 && wipe < 1);
+    sweep.classList.toggle('flip', wipe > .75);
+    sweepTxt.textContent = 'Прошивка ' + Math.round(wipe * 100) + '%';
+  }
+
+  /* ---------- тема шапки ---------- */
+  const hero = $('.hero');
+  function setTheme() {
+    const orderTop = order.getBoundingClientRect();
+    const clean = motion ? (wipe > .5 || orderTop.bottom < innerHeight * .5) : hero.getBoundingClientRect().bottom < 60;
+    document.body.classList.toggle('clean', clean);
+  }
+
+  let ticking = false;
+  function frame() {
+    ticking = false;
+    const max = document.documentElement.scrollHeight - innerHeight;
+    setFlash(max > 0 ? scrollY / max : 0);
+    setOrder();
+    setTheme();
+  }
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
+  let rz;
+  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { measure(); frame(); }, 120); });
+  measure(); frame();
+  document.fonts && document.fonts.ready.then(() => { measure(); frame(); });
+
+  /* ---------- 21 день: телефон ---------- */
+  const phone = $('#phone'), dayTxt = $('#dayTxt'), dayBar = $('#dayBar'), ver = $('#ver');
+  const blks = $$('.blk', phone);
+  function setDay(d, el) {
+    phone.dataset.day = d;
+    $$('.step').forEach(s => s.classList.toggle('on', s === el));
+    blks.forEach(b => b.classList.toggle('show', d >= +b.dataset.from));
+    dayTxt.textContent = d === 12 ? 'День 12 из 21' : 'День ' + d + ' из 21';
+    dayBar.style.width = (d / 21 * 100) + '%';
+    ver.textContent = d >= 21 ? 'Прошивка Ани, версия 2.0' : 'Прошивка Ани, версия 1.0';
+  }
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setDay(+e.target.dataset.day, e.target); }), { rootMargin: '-45% 0px -45% 0px' });
+  $$('.step').forEach(s => io.observe(s));
+  const pc = $('.phone-col');
+  new IntersectionObserver(es => es.forEach(e => pc.classList.toggle('vis', e.isIntersecting)), { rootMargin: '0px 0px -40% 0px' }).observe($('#steps'));
+  setDay(0, $('.step'));
+
+  /* ---------- наклон карточек (только мышь) ---------- */
+  if (motion && matchMedia('(hover:hover) and (pointer:fine)').matches) {
+    $$('.bugcard').forEach(c => {
+      c.addEventListener('pointermove', e => {
+        const r = c.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+        c.style.transform = `perspective(900px) rotateX(${((.5 - y) * 10).toFixed(2)}deg) rotateY(${((x - .5) * 12).toFixed(2)}deg)`;
+        c.style.setProperty('--gx', x * 100 + '%'); c.style.setProperty('--gy', y * 100 + '%');
+      });
+      c.addEventListener('pointerleave', () => { c.style.transform = ''; });
+    });
+  }
+
+  /* ---------- тест «Какой у тебя баг» ---------- */
+  const BUGS = {
+    s: { film: 'День сурка', text: 'Ты не ленивая. У тебя сценарий, который выключает тебя на третий день, ровно когда новое перестаёт быть праздником. Его не лечат новым планом. Его ловят в момент отката.' },
+    t: { film: 'Шоу Трумана', text: 'Ты упираешься в одну и ту же цифру, будто стена нарисована. Обычно это правило из прошлого, которое делает «больше» опасным. Найдём, где оно сидит, и перепишем.' },
+    z: { film: 'Золушка', text: 'Ты держишь на себе всех, и на свою жизнь остаётся вечер воскресенья. Это не доброта, а сценарий, который платит тебе чужой благодарностью вместо денег и сил.' },
+    i: { film: 'Ирония судьбы', text: 'Люди разные, а сюжет одинаковый. Значит, дело не в них, а в роли, которую ты берёшь в первые недели. Роль меняется быстрее, чем кажется.' }
+  };
+  const QS = [
+    { q: 'Что бесит сильнее всего?', a: [['s', 'Опять начинаю с понедельника'], ['t', 'Доход упёрся в одну цифру'], ['z', 'Всё на мне, а мне ничего'], ['i', 'Снова тот же тип мужчины']] },
+    { q: 'Когда всё наконец идёт хорошо, что обычно дальше?', a: [['s', 'Остываю и бросаю'], ['t', 'Что-то ломается, и я возвращаюсь на прежний уровень'], ['z', 'Кто-то просит помочь, и я переключаюсь на него'], ['i', 'Появляется человек, с которым опять по кругу']] },
+    { q: 'Что про тебя говорят близкие?', a: [['s', '«Ты опять что-то новое начала?»'], ['t', '«Тебе же и так нормально»'], ['z', '«Без тебя мы не справимся»'], ['i', '«Ты умеешь выбирать не тех»']] },
+    { q: 'Чего хочешь через месяц?', a: [['s', 'Довести одно дело до конца'], ['t', 'Пробить потолок по деньгам'], ['z', 'Перестать спасать всех'], ['i', 'Выйти из повторяющейся истории']] }
+  ];
+  const sheet = $('#sheet'), back = $('#sheetBack'), body = $('#qBody'), cnt = $('#qCnt'), qbar = $('#qBar'), prev = $('#qPrev');
+  let step = 0, answers = [], opener = null, open = false;
+
+  function render() {
+    if (step < QS.length) {
+      const it = QS[step];
+      cnt.textContent = 'Вопрос ' + (step + 1) + ' из ' + QS.length;
+      qbar.style.width = (step / QS.length * 100) + '%';
+      prev.hidden = step === 0;
+      body.innerHTML = '<h3 id="qTitle">' + it.q + '</h3><div class="opts">' +
+        it.a.map(([k, t]) => '<button class="opt" data-k="' + k + '" aria-pressed="' + (answers[step] === k) + '">' + t + '</button>').join('') + '</div>';
+      $$('.opt', body).forEach(b => b.addEventListener('click', () => { answers[step] = b.dataset.k; step++; render(); }));
+      $('.opt', body).focus({ preventScroll: true });
+    } else {
+      const score = { s: 0, t: 0, z: 0, i: 0 };
+      answers.forEach(k => score[k]++);
+      const top = Object.keys(score).reduce((a, b) => score[b] > score[a] ? b : a, answers[0]);
+      const r = BUGS[top];
+      cnt.textContent = 'Твой баг';
+      qbar.style.width = '100%';
+      prev.hidden = false;
+      body.innerHTML = '<div class="res"><h3 id="qTitle" class="res-film">«' + r.film + '»</h3><p>' + r.text + '</p><p>На диагностике за 60 минут найдём, где именно он запускается у тебя.</p>' +
+        '<a class="btn btn-red" href="https://t.me/Shpandarium" target="_blank" rel="noopener">Разобрать на диагностике</a>' +
+        '<button class="again" id="again">Пройти заново</button></div>';
+      $('#again').addEventListener('click', () => { step = 0; answers = []; render(); });
+      $('.btn', body).focus({ preventScroll: true });
+    }
+  }
+  function openSheet(btn) {
+    if (open) return;
+    opener = btn; open = true; step = 0; answers = [];
+    sheet.removeAttribute('inert'); sheet.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('sheet-open');
+    document.body.style.overflow = 'hidden';
+    history.pushState({ sheet: 1 }, '');
+    render();
+  }
+  function closeSheet(fromPop) {
+    if (!open) return;
+    open = false;
+    document.body.classList.remove('sheet-open');
+    document.body.style.overflow = '';
+    sheet.setAttribute('inert', ''); sheet.setAttribute('aria-hidden', 'true');
+    if (!fromPop && history.state && history.state.sheet) history.back();
+    opener && opener.focus({ preventScroll: true });
+  }
+  $$('[data-quiz]').forEach(b => b.addEventListener('click', () => openSheet(b)));
+  $('#qClose').addEventListener('click', () => closeSheet());
+  back.addEventListener('click', () => closeSheet());
+  prev.addEventListener('click', () => { step = Math.max(0, step - 1); render(); });
+  addEventListener('popstate', () => closeSheet(true)); // «Назад» телефона закрывает лист
+  addEventListener('keydown', e => {
+    if (!open) return;
+    if (e.key === 'Escape') closeSheet();
+    if (e.key === 'Tab') {
+      const f = $$('button:not([hidden]),a[href]', sheet);
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+})();
+</script>
+</body>
+</html>
