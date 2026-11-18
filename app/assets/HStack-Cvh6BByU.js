@@ -1,0 +1,1 @@
+import{v as e}from"./useSheetBack-DX89aEjO.js";import{a as t}from"./focusOutline.stylex-By_mN_Ke.js";var n=t();function r({ref:t,justify:r,align:i,hAlign:a,vAlign:o,...s}){return(0,n.jsx)(e,{...s,direction:`horizontal`,hAlign:a??r,vAlign:o??i,ref:t})}r.displayName=`HStack`;export{r as t};
