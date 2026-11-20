@@ -1,1 +1,0 @@
-import{t as e}from"./content-DVDknrAr.js";async function t(t,n=!1){if(navigator.share)try{return await navigator.share({text:t}),`shared`}catch(e){if(e.name===`AbortError`)return`cancel`}try{await navigator.clipboard.writeText(t)}catch{}return n&&window.open(e.contact,`_blank`,`noopener`),`copied`}export{t};
