@@ -1,5 +1,5 @@
 // Офлайн: страница — из сети, а без сети из кеша; файлы сборки и фото — из кеша.
-const CACHE = 'pereproshivka-v24';
+const CACHE = 'pereproshivka-v25';
 const CORE = ['./', './manifest.webmanifest', './icon-192.png', './photo/today.webp', './photo/calm.webp', './photo/dream.webp', './photo/morning.webp'];
 
 self.addEventListener('install', (e) => {
